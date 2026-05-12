@@ -20,7 +20,7 @@ function App() {
       setLoading(true);
 
       const response = await axios.post(
-        "https://ai-text-summarizer-backend.onrender.com/api/summarize/text",
+        "https://ai-text-summarizer-backend-02i3.onrender.com/api/summarize/text",
         { text }
       );
 
@@ -53,7 +53,7 @@ function App() {
       setLoading(true);
 
       const response = await axios.post(
-        "https://ai-text-summarizer-backend.onrender.com/api/summarize/pdf",
+        "https://ai-text-summarizer-backend-02i3.onrender.com/api/summarize/pdf",
         formData
       );
 
