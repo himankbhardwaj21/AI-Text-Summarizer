@@ -2,31 +2,25 @@ const axios = require("axios");
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
 
-require("dotenv").config();
-
 const summarizeText = async (req, res) => {
   try {
     const { text } = req.body;
 
-    const response = await axios.post(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
-      {
-        inputs: text,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    if (!text) {
+      return res.status(400).json({
+        error: "Text is required",
+      });
+    }
+
+    // Simple manual summarization logic
+    const summary = text.split(". ").slice(0, 2).join(". ") + ".";
 
     res.json({
-      summary: response.data[0].summary_text,
+      summary,
     });
 
   } catch (error) {
-    console.log(error.response?.data || error.message);
+    console.log(error.message);
 
     res.status(500).json({
       error: "Error generating summary",
@@ -40,27 +34,18 @@ const summarizePDF = async (req, res) => {
 
     const pdfData = await pdfParse(pdfBuffer);
 
-    const response = await axios.post(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
-      {
-        inputs: pdfData.text,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const text = pdfData.text;
+
+    const summary = text.split(". ").slice(0, 3).join(". ") + ".";
 
     fs.unlinkSync(req.file.path);
 
     res.json({
-      summary: response.data[0].summary_text,
+      summary,
     });
 
   } catch (error) {
-    console.log(error.response?.data || error.message);
+    console.log(error.message);
 
     res.status(500).json({
       error: "PDF summarization failed",
