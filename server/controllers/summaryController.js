@@ -1,44 +1,36 @@
-const axios = require("axios");
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
 
-require("dotenv").config();
-
 const summarizeText = async (req, res) => {
   try {
+
     const { text } = req.body;
 
     if (!text) {
       return res.status(400).json({
-        message: "Text is required"
+        error: "Text is required"
       });
     }
 
-    const response = await axios.post(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
-      {
-        inputs: text
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    const cleanedText = text.replace(/\n/g, " ");
+
+    const sentences = cleanedText.split(/[.!?]/);
+
+    const summary = sentences
+      .slice(0, 2)
+      .join(". ")
+      .trim();
 
     res.json({
-      summary: response.data[0].summary_text
+      summary: summary + "."
     });
 
   } catch (error) {
 
-    console.log(
-      error.response?.data || error.message
-    );
+    console.log(error);
 
     res.status(500).json({
-      message: "Error generating summary"
+      error: "Error generating summary"
     });
   }
 };
@@ -48,43 +40,35 @@ const summarizePDF = async (req, res) => {
 
     if (!req.file) {
       return res.status(400).json({
-        message: "PDF file is required"
+        error: "PDF file is required"
       });
     }
 
-    const dataBuffer = fs.readFileSync(req.file.path);
+    const pdfBuffer = fs.readFileSync(req.file.path);
 
-    const pdfData = await pdfParse(dataBuffer);
+    const pdfData = await pdfParse(pdfBuffer);
 
-    const text = pdfData.text;
+    const cleanedText = pdfData.text.replace(/\n/g, " ");
 
-    const response = await axios.post(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
-      {
-        inputs: text
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    const sentences = cleanedText.split(/[.!?]/);
+
+    const summary = sentences
+      .slice(0, 3)
+      .join(". ")
+      .trim();
 
     fs.unlinkSync(req.file.path);
 
     res.json({
-      summary: response.data[0].summary_text
+      summary: summary + "."
     });
 
   } catch (error) {
 
-    console.log(
-      error.response?.data || error.message
-    );
+    console.log(error);
 
     res.status(500).json({
-      message: "PDF summarization failed"
+      error: "PDF summarization failed"
     });
   }
 };
